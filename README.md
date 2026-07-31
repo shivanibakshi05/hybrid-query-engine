@@ -63,21 +63,6 @@ User drops CSV in browser
 
 ---
 
-## Project Structure
-
-```
-hybrid-query-engine/
-├── packages/
-│   ├── parser/          # TypeScript SQL parser (SQL string → AST)
-│   ├── engine-wasm/     # Rust columnar store compiled to WebAssembly
-│   ├── server/          # Node.js + DuckDB backend
-│   └── ui/              # React dashboard
-├── tsconfig.json
-└── package.json
-```
-
----
-
 ## Getting Started
 
 ### Prerequisites
@@ -151,28 +136,6 @@ Receives the same AST from the parser, translates it to SQL, and executes via Du
 ### 5. React Dashboard (`packages/ui`)
 
 Drag-and-drop CSV upload, SQL query editor, results table, charts (Recharts), and a benchmark panel comparing WASM vs server execution time.
-
----
-
-## Why This Project
-
-Most frontend engineers integrate existing tools. This project builds the equivalent of those tools from scratch to understand *why* they are fast:
-
-- **Columnar storage** → cache efficiency, SIMD vectorization, analytical query performance
-- **Rust/WASM** → near-native speed, no GC pauses, explicit memory control
-- **Recursive descent parser** → the same technique used in the TypeScript compiler and V8
-- **Hybrid routing** → tradeoff reasoning between client-side and server-side compute
-
----
-
-## Build Progress
-
-- [x] Week 1 — TypeScript SQL parser (15 tests passing)
-- [ ] Week 2 — Rust/WASM columnar engine
-- [ ] Week 3 — Query router + end-to-end wiring
-- [ ] Week 4 — Node.js + DuckDB server
-- [ ] Week 5 — React dashboard
-- [ ] Week 6 — Benchmarks + deployment
 
 ---
 
