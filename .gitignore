@@ -18,6 +18,9 @@ packages/engine-wasm/pkg-bundler/
 .env
 .env.local
 
+# test data
+*.csv
+
 # OS
 .DS_Store
 
