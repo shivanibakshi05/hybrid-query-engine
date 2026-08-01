@@ -8,6 +8,7 @@ target/
 
 # wasm-pack
 packages/engine-wasm/pkg/
+packages/engine-wasm/pkg-node/
 
 # TypeScript
 *.tsbuildinfo
