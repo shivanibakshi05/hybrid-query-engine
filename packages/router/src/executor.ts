@@ -25,6 +25,7 @@ export function executeQuery(
   DFClass: DataFrameClass
 ): Record<string, unknown>[] {
   let df = DFClass.from_csv(csv);
+  let aggregate: Extract<SelectColumn, { type: 'aggregate' }> | undefined;
 
   try {
     if (ast.where) {
@@ -39,11 +40,11 @@ export function executeQuery(
 
     if (ast.groupBy && ast.groupBy.length > 0) {
       const groupCol = ast.groupBy[0];
-      const agg = ast.select.find(
+      aggregate = ast.select.find(
         (s): s is Extract<SelectColumn, { type: 'aggregate' }> => s.type === 'aggregate'
       );
-      if (agg) {
-        const next = df.group_aggregate(groupCol, agg.fn, agg.col);
+      if (aggregate) {
+        const next = df.group_aggregate(groupCol, aggregate.fn, aggregate.col);
         df.free();
         df = next;
       }
@@ -57,6 +58,14 @@ export function executeQuery(
     }
 
     let rows: Record<string, unknown>[] = JSON.parse(df.to_json());
+
+    // The engine names the aggregate column after its source, and ORDER BY
+    // still refers to that name, so SELECT ... AS alias is applied last.
+    const alias = aggregate?.alias;
+    if (alias && alias !== aggregate!.col) {
+      const source = aggregate!.col;
+      rows = rows.map(({ [source]: value, ...rest }) => ({ ...rest, [alias]: value }));
+    }
 
     if (ast.limit !== undefined) {
       rows = rows.slice(0, ast.limit);

@@ -32,6 +32,22 @@ describe('executeQuery()', () => {
     expect(south?.revenue).toBe(2000);
   });
 
+  test('GROUP BY with SUM AS alias renames the aggregate column', () => {
+    const ast = parse('SELECT region, SUM(revenue) AS total FROM sales GROUP BY region');
+    const rows = executeQuery(ast, CSV, DataFrame);
+    const north = rows.find(r => r.region === 'North');
+    expect(north?.total).toBe(3000);
+    expect(north).not.toHaveProperty('revenue');
+  });
+
+  test('alias applies after ORDER BY on the aggregate', () => {
+    const ast = parse(
+      'SELECT region, SUM(revenue) AS total FROM sales GROUP BY region ORDER BY SUM(revenue) DESC'
+    );
+    const rows = executeQuery(ast, CSV, DataFrame);
+    expect(rows.map(r => r.total)).toEqual([3000, 2000]);
+  });
+
   test('ORDER BY revenue DESC', () => {
     const ast = parse('SELECT * FROM sales ORDER BY revenue DESC');
     const rows = executeQuery(ast, CSV, DataFrame);
