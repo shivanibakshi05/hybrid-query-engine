@@ -39,11 +39,13 @@ jobs:
       - name: Build WASM engine
         run: npm run build:wasm
 
-      - name: Run tests
-        run: npm test
-
+      # Must precede the tests: packages resolve each other through their
+      # compiled dist/ (package.json main/types), which a fresh checkout lacks.
       - name: Type-check and build
         run: npm run build --workspaces --if-present
+
+      - name: Run tests
+        run: npm test
 
       - name: Upload demo build
         if: github.ref == 'refs/heads/main'
