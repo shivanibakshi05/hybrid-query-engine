@@ -7,6 +7,8 @@
   ],
   "scripts": {
     "test": "npm run test --workspaces --if-present",
-    "build": "npm run build --workspaces --if-present"
+    "build:wasm": "wasm-pack build packages/engine-wasm --target bundler --out-dir pkg-bundler && wasm-pack build packages/engine-wasm --target nodejs --out-dir pkg-node",
+    "build": "npm run build:wasm && npm run build --workspaces --if-present",
+    "dev": "npm run dev -w @hybrid-query-engine/ui"
   }
 }
