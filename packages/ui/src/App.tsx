@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { parse } from '@hybrid-query-engine/parser';
 import { route, executeQuery } from '@hybrid-query-engine/router';
 import { DataFrame } from '../../engine-wasm/pkg-bundler/engine_wasm';
-import { queryServer } from './lib/serverEngine';
+import { queryServer, serverAvailable } from './lib/serverEngine';
 import CsvDropzone from './components/CsvDropzone';
 import QueryEditor from './components/QueryEditor';
 import ResultsTable from './components/ResultsTable';
@@ -18,6 +18,19 @@ export default function App() {
   const [execTime, setExecTime] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [downgraded, setDowngraded] = useState(false);
+
+  async function loadSample() {
+    const res = await fetch(`${import.meta.env.BASE_URL}sample-sales.csv`);
+    const text = await res.text();
+    setCsvText(text);
+    setFileName('sample-sales.csv');
+    setFileSize(new Blob([text]).size);
+    setRows([]);
+    setQuery(
+      'SELECT region, SUM(revenue) AS total FROM data GROUP BY region ORDER BY SUM(revenue) DESC'
+    );
+  }
 
   async function runQuery() {
     if (!csvText) return;
@@ -25,7 +38,11 @@ export default function App() {
     setError(null);
     try {
       const ast = parse(query);
-      const r = route(ast, fileSize, navigator.onLine);
+      const wanted = route(ast, fileSize, navigator.onLine);
+      // No DuckDB server in the hosted build — run everything in WASM and say so
+      // rather than failing on a connection error.
+      const r = wanted === 'server' && !serverAvailable ? 'wasm' : wanted;
+      setDowngraded(r !== wanted);
       setUsedRoute(r);
 
       if (r === 'wasm') {
@@ -47,9 +64,30 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-950 text-white p-6 max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold mb-1">Hybrid Query Engine</h1>
-      <p className="text-gray-500 text-sm mb-6">
+      <p className="text-gray-500 text-sm mb-4">
         In-browser WASM · Fallback to DuckDB server
       </p>
+
+      <div className="mb-4 flex items-center gap-3">
+        <button
+          onClick={loadSample}
+          className="px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-medium transition-colors"
+        >
+          Load sample dataset
+        </button>
+        <span className="text-xs text-gray-500">
+          500 rows of sales data — or drop your own CSV below
+        </span>
+      </div>
+
+      {!serverAvailable && (
+        <div className="mb-4 p-3 bg-gray-900 border border-gray-700 rounded text-xs text-gray-400">
+          Running in <span className="text-cyan-400">browser-only mode</span> — no
+          DuckDB server is configured for this build, so every query executes in
+          WASM. Your data never leaves this tab. Run the server locally to see
+          the hybrid routing path.
+        </div>
+      )}
 
       <CsvDropzone
         onLoad={(text, name, size) => {
@@ -98,6 +136,11 @@ export default function App() {
               <span className="text-xs text-gray-400">{execTime}ms</span>
             )}
             <span className="text-xs text-gray-400">{rows.length} rows</span>
+            {downgraded && (
+              <span className="text-xs text-amber-400">
+                would route to server — no server configured, ran in WASM
+              </span>
+            )}
           </div>
           <ResultsTable rows={rows} />
           <ResultsChart rows={rows} />
