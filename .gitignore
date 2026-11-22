@@ -22,6 +22,7 @@ packages/engine-wasm/pkg-bundler/
 *.csv
 # ...except the demo dataset shipped with the UI
 !packages/ui/public/*.csv
+!packages/server/src/__tests__/fixtures/*.csv
 
 # OS
 .DS_Store
